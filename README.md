@@ -1,70 +1,205 @@
-# Getting Started with Create React App
+Discover Dhaka
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An immersive web platform that allows users to explore the city of Dhaka through interactive maps, community stories, and local events. The platform combines geospatial mapping, crowdsourced storytelling, and event discovery to help both locals and travelers uncover Dhaka's hidden gems, history, and everyday culture.
 
-## Available Scripts
 
-In the project directory, you can run:
+How to Build and Run the App
 
-### `npm start`
+Prerequisites:
+- Node.js (version 14 or higher)
+- npm (comes with Node.js)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Installation Steps:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. Clone or download the project to your computer
 
-### `npm test`
+2. Open a terminal in the project directory
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+3. Install dependencies:
+   npm install
 
-### `npm run build`
+4. Start the development server:
+   npm start
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+5. The app will open in your browser at http://localhost:3000
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+6. To build for production:
+   npm run build
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+This creates an optimized production build in the build folder ready for deployment.
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Login Information
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The app uses mock authentication for demonstration purposes:
+- Email: Any valid email format (example: user@dhaka.com)
+- Password: Any password with at least 6 characters (example: password123)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Currently Implemented Features
 
-## Learn More
+1. Interactive Smart Map
+   - Dynamic map markers for landmarks, restaurants, and attractions
+   - Category filters (Food, Culture, Nature, History, Nightlife, Art)
+   - Search functionality with live filtering
+   - Click markers to view place details (name, description, image, rating)
+   - Save/bookmark places to your profile
+   - Built with Leaflet and React-Leaflet
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+2. Story Mode (User-Generated Content)
+   - Users can share personal experiences and travel stories
+   - Each story includes title, content, location, tags, and date
+   - Like functionality for stories
+   - Filter stories by tags
+   - Stories automatically tracked in user profile
+   - Create new stories through modal form
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3. Event Explorer
+   - Browse curated local events
+   - Event details include name, category, date, time, venue
+   - Category filters (Music, Art, Tech, Food, Sports)
+   - Add to Calendar button
+   - Ticket links for events
 
-### Code Splitting
+4. User Accounts and Profiles
+   - Login and Registration system
+   - Comprehensive profile page with multiple tabs:
+     - Overview: Profile information, bio, member since date
+     - My Stories: View all your shared stories
+     - Saved Places: All bookmarked locations
+     - My Routes: Custom routes you have created
+     - Badges: Achievement badges and progress
+   - Profile picture upload
+   - Public/Private profile toggle
+   - Edit profile functionality
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+5. XP and Badge System
+   - Earn experience points for activities:
+     - Save a place: 10 XP
+     - Create a story: 50 XP
+     - Create a route: 25 XP
+   - Level progression (every 100 XP = 1 level)
+   - 5 achievement badges:
+     - Explorer: Earned on joining
+     - Storyteller: Share your first story
+     - Foodie: Visit 5 food places
+     - History Buff: Visit 5 historical sites
+     - Old Town Explorer: Complete a heritage route
 
-### Analyzing the Bundle Size
+6. Custom Routes
+   - Create personalized itineraries from saved places
+   - Select 2 or more places to build a route
+   - Add route name and description
+   - View all created routes in profile
+   - Estimated duration calculation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+7. Navigation and UI
+   - Responsive navbar with all main sections
+   - Protected routes (require authentication)
+   - Modern gradient design with Dhaka-inspired colors
+   - Smooth transitions and animations
+   - Mobile-friendly responsive layout
 
-### Making a Progressive Web App
+8. Data Persistence
+   - User data saved to localStorage
+   - Profile information persists across sessions
+   - Saved places and routes retained after logout/login
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-### Advanced Configuration
+## Features Yet to Be Implemented
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+1. Interactive Smart Map Enhancements
+   - Get Directions button (Google Maps API integration)
+   - User ratings and reviews system
+   - Map clustering for multiple nearby pins
+   - Heatmap view for popular locations
 
-### Deployment
+2. Story Mode Enhancements
+   - Comment system for stories
+   - Add to my route button from stories
+   - Stories displayed as map markers
+   - Upload multiple images (currently placeholder)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+3. Event Explorer Enhancements
+   - User-submitted events
+   - Map view for event locations
+   - Admin moderation for submissions
+   - Calendar integration (iCal/Google Calendar)
 
-### `npm run build` fails to minify
+4. Discover Routes (Algorithmic)
+   - Pre-generated recommended routes
+   - Routes based on user interests
+   - Shortest path optimization
+   - Examples: Historic Old Dhaka Route, Foodie's Trail
+   - Google Directions API integration
+   - Estimated time calculations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+5. Admin Dashboard
+   - User management panel
+   - Approve/reject stories and events
+   - Analytics dashboard with charts
+   - Most visited areas tracking
+   - User engagement metrics
+   - Add/edit/delete places
+
+6. User Account Enhancements
+   - JWT or OAuth authentication (Google login)
+   - Badge unlock automation based on activity
+   - Social profile features
+   - Follow other users
+   - Real backend integration
+
+7. Dhaka Heritage Mode
+   - Curated heritage tours by admins
+   - Narrated historical routes
+   - Image sliders for immersive storytelling
+   - Optional 360-degree panorama views
+   - Audio guides
+
+8. Community Zone
+   - Discussion forum
+   - Topics: food, travel hacks, photography spots
+   - Thread organization by category
+   - Admin moderation
+
+9. UI/UX Enhancements
+   - Light and dark mode toggle
+   - Rickshaw art-inspired design elements
+   - More animations and transitions
+   - Accessibility improvements
+
+10. Backend Integration
+    - Real database (MongoDB/PostgreSQL)
+    - RESTful API or GraphQL
+    - Secure authentication
+    - File upload for images
+    - Real-time updates
+
+
+## Technology Stack
+
+- React 19.2.3
+- React Router DOM 7.10.1
+- Leaflet 1.9.4 (mapping library)
+- React-Leaflet 5.0.0
+- CSS custom properties for theming
+- LocalStorage for data persistence
+
+
+## Project Structure
+
+src/
+  components/
+    Auth/ - Login and Registration
+    Events/ - Event cards and list
+    Map/ - Interactive map component
+    Profile/ - User profile and routes
+    Shared/ - Navbar and common components
+    Stories/ - Story cards, list, and creation
+  contexts/
+    AuthContext.js - User authentication and state
+  data/
+    mockData.js - Sample places, stories, and events
+  App.js - Main routing
+  index.js - Entry point
+  index.css - Global styles
