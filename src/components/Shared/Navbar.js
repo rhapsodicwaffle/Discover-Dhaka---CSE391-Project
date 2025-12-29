@@ -24,6 +24,7 @@ const Navbar = () => {
               <Link to="/map" style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '500' }}>Map</Link>
               <Link to="/stories" style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '500' }}>Stories</Link>
               <Link to="/events" style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '500' }}>Events</Link>
+              <Link to="/forum" style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '500' }}>Forum</Link>
               <Link to="/profile" style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '500' }}>Profile</Link>
               <span style={{ color: 'var(--text-secondary)' }}>Hi, {user?.name}</span>
               <button onClick={handleLogout} className="btn btn-outline" style={{ padding: '8px 16px' }}>Logout</button>

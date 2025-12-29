@@ -1,7 +1,8 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { mockPlaces, categories } from '../../data/mockData';
+import { categories } from '../../data/mockData';
 import { useAuth } from '../../contexts/AuthContext';
+import { placesAPI } from '../../api/services';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -13,28 +14,55 @@ L.Icon.Default.mergeOptions({
 });
 
 const InteractiveMap = () => {
-  const { user, savePlace, unsavePlace } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const isPlaceSaved = (placeId) => {
-    return user?.savedPlaces?.some(p => p.id === placeId) || false;
-  };
+  useEffect(() => {
+    fetchPlaces();
+  }, [selectedCategory, searchQuery]);
 
-  const handleSavePlace = (place) => {
-    if (isPlaceSaved(place.id)) {
-      unsavePlace(place.id);
-    } else {
-      savePlace(place);
+  const fetchPlaces = async () => {
+    try {
+      setLoading(true);
+      const params = {};
+      if (selectedCategory !== 'All') params.category = selectedCategory;
+      if (searchQuery) params.search = searchQuery;
+      
+      const response = await placesAPI.getAll(params);
+      if (response.success) {
+        setPlaces(response.data);
+      }
+    } catch (err) {
+      setError('Failed to load places');
+      console.error(err);
+    } finally {
+      se{error && (
+          <div style={{ padding: '12px', background: '#fee', color: '#c33', borderRadius: '8px', marginBottom: '16px' }}>
+            {error}
+          </div>
+        )}
+        tLoading(false);
     }
   };
 
-  const filteredPlaces = mockPlaces.filter(place => {
-    const matchesCategory = selectedCategory === 'All' || place.category === selectedCategory;
-    const matchesSearch = place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          place.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const isPlaceSaved = (placeId) => {
+    return user?.savedPlaces?.some(p => p._id === placeId) || false;
+  };
+
+  const handleSavePlace = async (place) => {
+    if (!isAuthenticated) {
+      alert('Please login to save places');
+      return;
+    }
+    // This would need a save place API endpoint - for now just show message
+    alert('Save place feature - API endpoint pending');
+  };
+
+  const filteredPlaces = places;
 
   return (
     <div style={{ height: '100%' }}>
@@ -63,18 +91,23 @@ const InteractiveMap = () => {
               style={{ cursor: 'pointer', padding: '8px 16px', border: 'none', fontSize: '14px' }}
             >
               {category}
-            </button>
-          ))}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 260px)' }}>
+          <div style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>Loading places...</div>
         </div>
-      </div>
-      
-      <MapContainer
-        center={[23.8103, 90.4125]}
-        zoom={12}
-        style={{ height: 'calc(100vh - 260px)', width: '100%' }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ) : (
+        <MapContainer
+          center={[23.8103, 90.4125]}
+          zoom={12}
+          style={{ height: 'calc(100vh - 260px)', width: '100%' }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          {filteredPlaces.map(place => (
+            <Marker key={place._id} position={[place.lat, place.lng]}>
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {filteredPlaces.map(place => (
@@ -94,22 +127,23 @@ const InteractiveMap = () => {
                   {place.description}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: 'var(--secondary)' }}>⭐</span>
-                    <span style={{ fontWeight: '600' }}>{place.rating}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleSavePlace(place)}
-                  style={{
-                    width: '100%',
-                    padding: '8px',
-                    background: isPlaceSaved(place.id) ? 'var(--primary)' : 'white',
-                    color: isPlaceSaved(place.id) ? 'white' : 'var(--primary)',
+                  <div style={{ display: 'flex', al_id) ? 'var(--primary)' : 'white',
+                    color: isPlaceSaved(place._id) ? 'white' : 'var(--primary)',
                     border: `1px solid var(--primary)`,
                     borderRadius: '6px',
                     cursor: 'pointer',
                     fontWeight: '600',
+                    fontSize: '14px'
+                  }}
+                >
+                  {isPlaceSaved(place._id) ? '✓ Saved' : '+ Save Place'}
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+          ))}
+        </MapContainer>
+      )}ontWeight: '600',
                     fontSize: '14px'
                   }}
                 >

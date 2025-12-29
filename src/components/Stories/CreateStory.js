@@ -1,35 +1,52 @@
 ﻿import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { storiesAPI } from '../../api/services';
 
 const CreateStory = ({ onClose, onSubmit }) => {
-  const { user, addStory } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    location: '',
-    tags: ''
+    placeName: '',
+    tags: '',
+    place: '' // Optional place ID
   });
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files).slice(0, 5); // Max 5 images
+    setImages(files);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newStory = {
-      id: Date.now(),
-      title: formData.title,
-      content: formData.content,
-      placeName: formData.location,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      author: user?.name || 'Anonymous',
-      image: 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366',
-      likes: 0,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    };
-    addStory(newStory);
-    onSubmit && onSubmit(newStory);
-    onClose && onClose();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const storyData = {
+        ...formData,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        images
+      };
+      
+      const response = await storiesAPI.create(storyData);
+      if (response.success) {
+        await refreshUser(); // Refresh user to get updated XP and badges
+        onSubmit && onSubmit(response.data);
+        onClose && onClose();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create story');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,6 +63,12 @@ const CreateStory = ({ onClose, onSubmit }) => {
             </button>
           </div>
           
+          {error && (
+            <div style={{ padding: '12px', background: '#fee', color: '#c33', borderRadius: '8px', marginBottom: '16px' }}>
+              {error}
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Story Title</label>
@@ -57,6 +80,7 @@ const CreateStory = ({ onClose, onSubmit }) => {
                 required
                 className="form-input"
                 placeholder="Give your story a catchy title..."
+                disabled={loading}
               />
             </div>
             
@@ -64,12 +88,13 @@ const CreateStory = ({ onClose, onSubmit }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Location</label>
               <input
                 type="text"
-                name="location"
-                value={formData.location}
+                name="placeName"
+                value={formData.placeName}
                 onChange={handleChange}
                 required
                 className="form-input"
                 placeholder="Where did this happen?"
+                disabled={loading}
               />
             </div>
             
@@ -84,10 +109,11 @@ const CreateStory = ({ onClose, onSubmit }) => {
                 rows="6"
                 placeholder="Share your experience in Dhaka..."
                 style={{ resize: 'vertical' }}
+                disabled={loading}
               />
             </div>
             
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Tags (comma separated)</label>
               <input
                 type="text"
@@ -96,18 +122,37 @@ const CreateStory = ({ onClose, onSubmit }) => {
                 onChange={handleChange}
                 className="form-input"
                 placeholder="food, culture, history..."
+                disabled={loading}
               />
             </div>
             
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Images (up to 5)</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+                className="form-input"
+                disabled={loading}
+              />
+              {images.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  {images.length} image(s) selected
+                </div>
+              )}
+            </div>
+            
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button type="submit" className="btn" style={{ flex: 1 }}>
-                Share Story
+              <button type="submit" className="btn" style={{ flex: 1 }} disabled={loading}>
+                {loading ? 'Sharing...' : 'Share Story (+50 XP)'}
               </button>
               <button 
                 type="button" 
                 onClick={onClose}
                 className="btn btn-outline" 
                 style={{ flex: 1 }}
+                disabled={loading}
               >
                 Cancel
               </button>

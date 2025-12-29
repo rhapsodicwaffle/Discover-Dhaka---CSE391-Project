@@ -8,6 +8,7 @@ import InteractiveMap from './components/Map/InteractiveMap';
 import StoryList from './components/Stories/StoryList';
 import EventList from './components/Events/EventList';
 import Profile from './components/Profile/Profile';
+import Forum from './components/Forum/Forum';
 import './index.css';
 
 const ProtectedRoute = ({ children }) => {
@@ -42,6 +43,8 @@ const StoriesPage = () => <StoryList />;
 
 const EventsPage = () => <EventList />;
 
+const ForumPage = () => <Forum />;
+
 function App() {
   return (
     <AuthProvider>
@@ -55,6 +58,7 @@ function App() {
             <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
             <Route path="/stories" element={<ProtectedRoute><StoriesPage /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
+            <Route path="/forum" element={<ProtectedRoute><ForumPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           </Routes>
         </div>

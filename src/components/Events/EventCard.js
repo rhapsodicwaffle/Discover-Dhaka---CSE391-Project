@@ -1,15 +1,32 @@
 ﻿import React from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, onAttend }) => {
+  const { user, isAuthenticated } = useAuth();
+  const isAttending = user && event.attendees?.includes(user._id);
+
   const handleAddToCalendar = () => {
-    alert(`Adding "${event.name}" to calendar!`);
+    alert(`Adding "${event.title}" to calendar!`);
+  };
+
+  const handleAttend = () => {
+    if (!isAuthenticated) {
+      alert('Please login to attend events');
+      return;
+    }
+    onAttend && onAttend(event._id);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
       <img 
-        src={event.imageUrl} 
-        alt={event.name}
+        src={event.image || event.imageUrl || 'https://via.placeholder.com/400x180'} 
+        alt={event.title || event.name}
         style={{ width: '100%', height: '180px', objectFit: 'cover' }}
       />
       <div style={{ padding: '20px' }}>
@@ -19,19 +36,19 @@ const EventCard = ({ event }) => {
           </span>
         </div>
         
-        <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600' }}>{event.name}</h3>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', fontWeight: '600' }}>{event.title || event.name}</h3>
         
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-            <span></span>
-            <span>{event.date}</span>
+            <span>📅</span>
+            <span>{formatDate(event.date)}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-            <span></span>
+            <span>🕒</span>
             <span>{event.time}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-            <span></span>
+            <span>📍</span>
             <span>{event.venue}</span>
           </div>
         </div>
@@ -40,13 +57,24 @@ const EventCard = ({ event }) => {
           {event.description}
         </p>
         
+        <div style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+          {event.attendees?.length || 0} attending
+        </div>
+        
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
-            onClick={handleAddToCalendar}
+            onClick={handleAttend}
             className="btn"
-            style={{ flex: 1, fontSize: '14px', padding: '10px' }}
+            style={{ 
+              flex: 1, 
+              fontSize: '14px', 
+              padding: '10px',
+              background: isAttending ? 'var(--primary)' : 'white',
+              color: isAttending ? 'white' : 'var(--primary)',
+              border: `1px solid var(--primary)`
+            }}
           >
-            Add to Calendar
+            {isAttending ? '✓ Attending' : 'Attend'}
           </button>
           {event.ticketLink && (
             <a 

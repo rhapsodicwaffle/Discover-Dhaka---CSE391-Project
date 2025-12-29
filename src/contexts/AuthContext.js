@@ -1,153 +1,97 @@
 ﻿import React, { createContext, useState, useContext, useEffect } from 'react';
+import { authAPI } from '../api/services';
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
-const defaultBadges = [
-  { id: 1, name: 'Explorer', icon: '🗺️', earned: true, description: 'Joined Discover Dhaka' },
-  { id: 2, name: 'Storyteller', icon: '📖', earned: false, description: 'Share your first story' },
-  { id: 3, name: 'Foodie', icon: '🍜', earned: false, description: 'Visit 5 food places' },
-  { id: 4, name: 'History Buff', icon: '🏛️', earned: false, description: 'Visit 5 historical sites' },
-  { id: 5, name: 'Old Town Explorer', icon: '🚶', earned: false, description: 'Complete a heritage route' }
-];
-
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('isAuthenticated') === 'true';
-  });
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // Load user on mount if token exists
   useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('isAuthenticated', 'true');
+    const token = localStorage.getItem('token');
+    if (token) {
+      loadUser();
     } else {
-      localStorage.removeItem('user');
-      localStorage.removeItem('isAuthenticated');
+      setLoading(false);
     }
-  }, [user, isAuthenticated]);
+  }, []);
 
-  const login = (email, password) => {
-    if (email && password.length >= 6) {
-      const newUser = {
-        email,
-        name: email.split('@')[0],
-        profilePicture: null,
-        bio: '',
-        savedPlaces: [],
-        savedRoutes: [],
-        myStories: [],
-        xp: 0,
-        badges: defaultBadges,
-        isPublic: true,
-        joinDate: new Date().toISOString()
-      };
-      setUser(newUser);
-      setIsAuthenticated(true);
-      return true;
+  const loadUser = async () => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      if (response.success) {
+        setUser(response.data);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      localStorage.removeItem('token');
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
     }
-    return false;
   };
 
-  const register = (name, email, password) => {
-    if (name && email && password.length >= 6) {
-      const newUser = {
-        email,
-        name,
-        profilePicture: null,
-        bio: '',
-        savedPlaces: [],
-        savedRoutes: [],
-        myStories: [],
-        xp: 0,
-        badges: defaultBadges,
-        isPublic: true,
-        joinDate: new Date().toISOString()
-      };
-      setUser(newUser);
-      setIsAuthenticated(true);
-      return true;
+  const login = async (email, password) => {
+    try {
+      const response = await authAPI.login(email, password);
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        setUser(response.data);
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    return false;
+  };
+
+  const register = async (name, email, password) => {
+    try {
+      const response = await authAPI.register(name, email, password);
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        setUser(response.data);
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
   };
 
-  const updateProfile = (updates) => {
-    setUser(prev => ({ ...prev, ...updates }));
-  };
-
-  const savePlace = (place) => {
-    setUser(prev => ({
-      ...prev,
-      savedPlaces: [...prev.savedPlaces, place],
-      xp: prev.xp + 10
-    }));
-  };
-
-  const unsavePlace = (placeId) => {
-    setUser(prev => ({
-      ...prev,
-      savedPlaces: prev.savedPlaces.filter(p => p.id !== placeId)
-    }));
-  };
-
-  const saveRoute = (route) => {
-    setUser(prev => ({
-      ...prev,
-      savedRoutes: [...prev.savedRoutes, route],
-      xp: prev.xp + 25
-    }));
-  };
-
-  const addStory = (story) => {
-    setUser(prev => {
-      const newBadges = [...prev.badges];
-      const storytellerBadge = newBadges.find(b => b.name === 'Storyteller');
-      if (storytellerBadge && !storytellerBadge.earned) {
-        storytellerBadge.earned = true;
-      }
-      
-      return {
-        ...prev,
-        myStories: [story, ...prev.myStories],
-        xp: prev.xp + 50,
-        badges: newBadges
-      };
-    });
-  };
-
-  const earnBadge = (badgeName) => {
-    setUser(prev => {
-      const newBadges = [...prev.badges];
-      const badge = newBadges.find(b => b.name === badgeName);
-      if (badge && !badge.earned) {
-        badge.earned = true;
-      }
-      return { ...prev, badges: newBadges };
-    });
+  const updateProfile = async (updates) => {
+    try {
+      await loadUser(); // Reload user to get updated data
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
   return (
     <AuthContext.Provider value={{ 
       user, 
-      isAuthenticated, 
+      isAuthenticated,
+      loading,
       login, 
       register, 
       logout,
       updateProfile,
-      savePlace,
-      unsavePlace,
-      saveRoute,
-      addStory,
-      earnBadge
+      refreshUser: loadUser
     }}>
       {children}
     </AuthContext.Provider>

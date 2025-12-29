@@ -21,22 +21,21 @@ Installation Steps:
 4. Start the development server:
    npm start
 
-5. The app will open in your browser at http://localhost:3000
+5. The app will open in your browser at 
 
 6. To build for production:
    npm run build
 
 This creates an optimized production build in the build folder ready for deployment.
 
-
-## Login Information
+Login Information
 
 The app uses mock authentication for demonstration purposes:
 - Email: Any valid email format (example: user@dhaka.com)
 - Password: Any password with at least 6 characters (example: password123)
 
 
-## Currently Implemented Features
+Currently Implemented Features
 
 1. Interactive Smart Map
    - Dynamic map markers for landmarks, restaurants, and attractions
@@ -106,7 +105,7 @@ The app uses mock authentication for demonstration purposes:
    - Saved places and routes retained after logout/login
 
 
-## Features Yet to Be Implemented
+Features Yet to Be Implemented
 
 1. Interactive Smart Map Enhancements
    - Get Directions button (Google Maps API integration)
@@ -176,7 +175,7 @@ The app uses mock authentication for demonstration purposes:
     - Real-time updates
 
 
-## Technology Stack
+Technology Stack
 
 - React 19.2.3
 - React Router DOM 7.10.1
@@ -185,8 +184,7 @@ The app uses mock authentication for demonstration purposes:
 - CSS custom properties for theming
 - LocalStorage for data persistence
 
-
-## Project Structure
+Project Structure
 
 src/
   components/

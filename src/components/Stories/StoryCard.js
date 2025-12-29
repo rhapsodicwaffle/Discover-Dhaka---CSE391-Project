@@ -1,21 +1,25 @@
 ﻿import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StoryCard = ({ story, onLike }) => {
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(story.likes);
+  const { user } = useAuth();
+  const isLiked = user && story.likes?.includes(user._id);
+  const [localLiked, setLocalLiked] = useState(isLiked);
 
   const handleLike = () => {
-    if (!liked) {
-      setLiked(true);
-      setLikeCount(likeCount + 1);
-      onLike && onLike(story.id);
-    }
+    setLocalLiked(!localLiked);
+    onLike && onLike(story._id);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
     <div className="card" style={{ overflow: 'hidden' }}>
       <img 
-        src={story.image} 
+        src={story.images?.[0] || story.image || 'https://via.placeholder.com/400x200'} 
         alt={story.title}
         style={{ width: '100%', height: '200px', objectFit: 'cover' }}
       />
@@ -23,10 +27,10 @@ const StoryCard = ({ story, onLike }) => {
         <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600' }}>{story.title}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '14px' }}>
-            {story.author[0]}
+            {story.author?.name?.[0] || 'U'}
           </div>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '600' }}>{story.author}</div>
+            <div style={{ fontSize: '14px', fontWeight: '600' }}>{story.author?.name || 'Anonymous'}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{story.placeName}</div>
           </div>
         </div>
@@ -34,7 +38,7 @@ const StoryCard = ({ story, onLike }) => {
           {story.content}
         </p>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
-          {story.tags.map(tag => (
+          {story.tags?.map(tag => (
             <span key={tag} className="badge badge-secondary" style={{ fontSize: '12px' }}>
               #{tag}
             </span>
@@ -47,14 +51,16 @@ const StoryCard = ({ story, onLike }) => {
             style={{ 
               padding: '8px 16px', 
               fontSize: '14px',
-              background: liked ? 'var(--primary)' : 'transparent',
-              color: liked ? 'white' : 'var(--text-primary)',
-              borderColor: liked ? 'var(--primary)' : 'var(--border)'
+              background: localLiked ? 'var(--primary)' : 'transparent',
+              color: localLiked ? 'white' : 'var(--text-primary)',
+              borderColor: localLiked ? 'var(--primary)' : 'var(--border)'
             }}
           >
-            {liked ? '' : ''} {likeCount}
+            {localLiked ? '❤️' : '🤍'} {story.likesCount || 0}
           </button>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{story.date}</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            {formatDate(story.createdAt)}
+          </span>
         </div>
       </div>
     </div>

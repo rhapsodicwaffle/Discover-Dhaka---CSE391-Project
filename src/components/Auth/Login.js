@@ -6,17 +6,26 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
-    if (login(email, password)) {
-      navigate('/map');
-    } else {
-      setError('Invalid credentials. Password must be at least 6 characters.');
+    try {
+      const success = await login(email, password);
+      if (success) {
+        navigate('/map');
+      } else {
+        setError('Invalid credentials');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,10 +68,15 @@ const Login = () => {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }}>
-            Login
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }} disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '16px', padding: '12px', background: '#f5f5f5', borderRadius: '8px', fontSize: '13px' }}>
+          <strong>Test Account:</strong><br />
+          test@test.com / test123
+        </div>
 
         <div style={{ textAlign: 'center', marginTop: '20px' }}>
           <p style={{ color: 'var(--text-secondary)' }}>

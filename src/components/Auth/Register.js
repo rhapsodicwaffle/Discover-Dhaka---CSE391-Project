@@ -8,10 +8,11 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -20,10 +21,23 @@ const Register = () => {
       return;
     }
 
-    if (register(name, email, password)) {
-      navigate('/map');
-    } else {
-      setError('Registration failed. Please check all fields.');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const success = await register(name, email, password);
+      if (success) {
+        navigate('/map');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,8 +104,8 @@ const Register = () => {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }}>
-            Register
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }} disabled={loading}>
+            {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>
 

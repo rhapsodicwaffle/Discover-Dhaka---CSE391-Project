@@ -1,21 +1,61 @@
-﻿import React, { useState } from 'react';
-import { mockStories } from '../../data/mockData';
+﻿import React, { useState, useEffect } from 'react';
+import { storiesAPI } from '../../api/services';
 import StoryCard from './StoryCard';
 import CreateStory from './CreateStory';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StoryList = () => {
-  const [stories, setStories] = useState(mockStories);
+  const { isAuthenticated } = useAuth();
+  const [stories, setStories] = useState([]);
   const [selectedTag, setSelectedTag] = useState('All');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const allTags = ['All', ...new Set(mockStories.flatMap(story => story.tags))];
+  const allTags = ['All', ...new Set(stories.flatMap(story => story.tags || []))];
 
-  const filteredStories = selectedTag === 'All' 
-    ? stories 
-    : stories.filter(story => story.tags.includes(selectedTag));
+  useEffect(() => {
+    fetchStories();
+  }, [selectedTag]);
+
+  const fetchStories = async () => {
+    try {
+      setLoading(true);
+      const params = selectedTag !== 'All' ? { tag: selectedTag } : {};
+      const response = await storiesAPI.getAll(params);
+      if (response.success) {
+        setStories(response.data);
+      }
+    } catch (err) {
+      setError('Failed to load stories');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredStories = stories;
 
   const handleNewStory = (newStory) => {
     setStories([newStory, ...stories]);
+  };
+
+  const handleLikeStory = async (storyId) => {
+    if (!isAuthenticated) {
+      alert('Please login to like stories');
+      return;
+    }
+    try {
+      const response = await storiesAPI.like(storyId);
+      if (response.success) {
+        // Update the story in the list
+        setStories(stories.map(s => 
+          s._id === storyId ? response.data : s
+        ));
+      }
+    } catch (err) {
+      console.error('Failed to like story:', err);
+    }
   };
 
   return (
@@ -37,6 +77,12 @@ const StoryList = () => {
       </div>
 
       <div className="container">
+        {error && (
+          <div style={{ padding: '16px', background: '#fee', color: '#c33', borderRadius: '8px', marginBottom: '24px' }}>
+            {error}
+          </div>
+        )}
+        
         <div style={{ marginBottom: '24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {allTags.map(tag => (
             <button
@@ -50,17 +96,25 @@ const StoryList = () => {
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-          {filteredStories.map(story => (
-            <StoryCard key={story.id} story={story} />
-          ))}
-        </div>
-
-        {filteredStories.length === 0 && (
-          <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
-            <h3 style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>No stories found</h3>
-            <p style={{ color: 'var(--text-secondary)' }}>Try selecting a different tag</p>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>Loading stories...</div>
           </div>
+        ) : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+              {filteredStories.map(story => (
+                <StoryCard key={story._id} story={story} onLike={handleLikeStory} />
+              ))}
+            </div>
+
+            {filteredStories.length === 0 && (
+              <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                <h3 style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>No stories found</h3>
+                <p style={{ color: 'var(--text-secondary)' }}>Try selecting a different tag</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
