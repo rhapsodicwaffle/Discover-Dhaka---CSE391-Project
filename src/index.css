@@ -15,16 +15,23 @@ body {
 }
 
 :root {
-  --primary: #E91E63;
-  --secondary: #FFC107;
-  --accent: #00BCD4;
+  /* Rickshaw Color Palette */
+  --rickshaw-yellow: #FFD93D;
+  --rickshaw-green: #6BCB77;
+  --rickshaw-orange: #FF6B35;
+  --rickshaw-red: #F7931E;
+  --rickshaw-blue: #4D96FF;
+  
+  --primary: #FF6B35;
+  --secondary: #FFD93D;
+  --accent: #6BCB77;
   --success: #4CAF50;
   --background: #f5f5f5;
   --card: #ffffff;
   --text-primary: #212121;
   --text-secondary: #757575;
-  --gradient-start: #E91E63;
-  --gradient-end: #FF6F00;
+  --gradient-start: #FF6B35;
+  --gradient-end: #F7931E;
 }
 
 .gradient-bg {
@@ -123,17 +130,175 @@ body {
   z-index: 100;
 }
 
+.nav-link:hover {
+  color: var(--rickshaw-orange) !important;
+  transform: translateY(-2px);
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
 }
 
+/* Rickshaw-themed patterns */
+.rickshaw-pattern {
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255, 107, 53, 0.03) 35px, rgba(255, 107, 53, 0.03) 70px),
+    repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(255, 217, 61, 0.03) 35px, rgba(255, 217, 61, 0.03) 70px);
+}
+
+.rickshaw-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    #FFD93D 0px,
+    #FFD93D 20px,
+    #FF6B35 20px,
+    #FF6B35 40px,
+    #6BCB77 40px,
+    #6BCB77 60px
+  );
+  animation: borderScroll 3s linear infinite;
+}
+
+@keyframes borderScroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 0; }
+}
+
+/* Rickshaw wheel decoration */
+.rickshaw-wheel {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #FF6B35;
+  border-radius: 50%;
+  position: relative;
+  animation: wheelSpin 4s linear infinite;
+}
+
+.rickshaw-wheel::before,
+.rickshaw-wheel::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #FF6B35;
+}
+
+.rickshaw-wheel::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.rickshaw-wheel::after {
+  width: 100%;
+  height: 2px;
+}
+
+@keyframes wheelSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.6s ease-out;
+}
+
+.animate-bounce {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.25);
+}
+
+.hover-glow {
+  transition: all 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.6),
+              0 0 40px rgba(255, 217, 61, 0.4);
+}
+
+/* Button animations */
+.btn-danger {
+  background: linear-gradient(135deg, #f44336, #e91e63);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
 }
