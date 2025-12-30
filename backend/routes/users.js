@@ -1,16 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const UserModel = require('../models/UserModel');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // @route   GET /api/users/:id
 router.get('/:id', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select('-password')
-      .populate('savedPlaces')
-      .populate('savedRoutes');
+    const user = await UserModel.findById(req.params.id);
     
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -27,12 +24,11 @@ router.put('/profile', protect, async (req, res) => {
   try {
     const { name, bio } = req.body;
     
-    const user = await User.findById(req.user.id).select('-password');
+    const updates = {};
+    if (name) updates.name = name;
+    if (bio !== undefined) updates.bio = bio;
     
-    if (name) user.name = name;
-    if (bio !== undefined) user.bio = bio;
-    
-    await user.save();
+    const user = await UserModel.update(req.user.id, updates);
     
     res.json({ success: true, data: user });
   } catch (error) {
@@ -47,10 +43,9 @@ router.post('/profile/picture', protect, upload.single('image'), async (req, res
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     
-    const user = await User.findById(req.user.id).select('-password');
-    user.profilePicture = `/uploads/${req.file.filename}`;
-    
-    await user.save();
+    const user = await UserModel.update(req.user.id, {
+      profilePicture: `/uploads/${req.file.filename}`
+    });
     
     res.json({ success: true, data: user });
   } catch (error) {

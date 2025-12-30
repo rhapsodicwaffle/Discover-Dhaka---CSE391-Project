@@ -1,21 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const Event = require('../models/Event');
+const EventModel = require('../models/EventModel');
 const { protect, admin } = require('../middleware/auth');
 
 // @route   GET /api/events
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = { isApproved: true };
+    const query = { isApproved: true };
     
     if (category && category !== 'All') {
       query.category = category;
     }
     
-    const events = await Event.find(query)
-      .populate('createdBy', 'name profilePicture')
-      .sort('-date');
+    const events = await EventModel.findAll(query);
     
     res.json({ success: true, count: events.length, data: events });
   } catch (error) {
@@ -26,9 +24,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/events/:id
 router.get('/:id', async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id)
-      .populate('createdBy', 'name profilePicture')
-      .populate('attendees', 'name profilePicture');
+    const event = await EventModel.findById(req.params.id);
       
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
@@ -43,7 +39,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/events
 router.post('/', protect, async (req, res) => {
   try {
-    const event = await Event.create({
+    const event = await EventModel.create({
       ...req.body,
       createdBy: req.user.id,
       isApproved: req.user.role === 'admin'
@@ -58,23 +54,24 @@ router.post('/', protect, async (req, res) => {
 // @route   POST /api/events/:id/attend
 router.post('/:id/attend', protect, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await EventModel.findById(req.params.id);
     
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
     }
     
     const attendeeIndex = event.attendees.indexOf(req.user.id);
+    let updatedAttendees;
     
     if (attendeeIndex > -1) {
-      event.attendees.splice(attendeeIndex, 1);
+      updatedAttendees = event.attendees.filter(id => id !== req.user.id);
     } else {
-      event.attendees.push(req.user.id);
+      updatedAttendees = [...event.attendees, req.user.id];
     }
     
-    await event.save();
+    const updatedEvent = await EventModel.update(req.params.id, { attendees: updatedAttendees });
     
-    res.json({ success: true, data: event });
+    res.json({ success: true, data: updatedEvent });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -83,17 +80,17 @@ router.post('/:id/attend', protect, async (req, res) => {
 // @route   DELETE /api/events/:id
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await EventModel.findById(req.params.id);
     
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
     }
     
-    if (event.createdBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (event.createdBy !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     
-    await event.deleteOne();
+    await EventModel.delete(req.params.id);
     
     res.json({ success: true, message: 'Event deleted' });
   } catch (error) {

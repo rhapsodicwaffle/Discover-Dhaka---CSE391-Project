@@ -1,17 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const Review = require('../models/Review');
-const Place = require('../models/Place');
-const User = require('../models/User');
+const ReviewModel = require('../models/ReviewModel');
+const PlaceModel = require('../models/PlaceModel');
+const UserModel = require('../models/UserModel');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // @route   GET /api/reviews/place/:placeId
 router.get('/place/:placeId', async (req, res) => {
   try {
-    const reviews = await Review.find({ place: req.params.placeId })
-      .populate('user', 'name profilePicture')
-      .sort('-createdAt');
+    const reviews = await ReviewModel.findAll({ place: req.params.placeId });
     
     res.json({ success: true, count: reviews.length, data: reviews });
   } catch (error) {
@@ -25,7 +23,7 @@ router.post('/', protect, upload.array('images', 3), async (req, res) => {
     const { place, rating, comment } = req.body;
     
     // Check if review already exists
-    const existingReview = await Review.findOne({ place, user: req.user.id });
+    const existingReview = await ReviewModel.findOne({ place, user: req.user.id });
     if (existingReview) {
       return res.status(400).json({ 
         success: false, 
@@ -35,7 +33,7 @@ router.post('/', protect, upload.array('images', 3), async (req, res) => {
     
     const images = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
     
-    const review = await Review.create({
+    const review = await ReviewModel.create({
       place,
       user: req.user.id,
       rating,
@@ -44,34 +42,31 @@ router.post('/', protect, upload.array('images', 3), async (req, res) => {
     });
     
     // Update place average rating
-    const placeDoc = await Place.findById(place);
-    const reviews = await Review.find({ place });
+    const reviews = await ReviewModel.findAll({ place });
     const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-    placeDoc.rating = avgRating;
-    await placeDoc.save();
+    await PlaceModel.update(place, { rating: avgRating });
     
     // Add XP for reviewing
-    const user = await User.findById(req.user.id);
-    user.addXP(10);
-    
-    // Check for Reviewer badge (5 reviews)
-    const userReviews = await Review.find({ user: req.user.id });
-    if (userReviews.length >= 5 && !user.badges.some(b => b.id === 'reviewer')) {
-      user.badges.push({
-        id: 'reviewer',
-        name: 'Reviewer',
-        icon: '📝',
-        description: 'Write 5 reviews',
-        dateEarned: new Date()
-      });
+    const user = await UserModel.findById(req.user.id);
+    if (user) {
+      const currentXP = user.xp || 0;
+      await UserModel.update(req.user.id, { xp: currentXP + 10 });
+      
+      // Check for Reviewer badge (5 reviews)
+      const userReviewCount = await ReviewModel.count({ user: req.user.id });
+      if (userReviewCount >= 5 && user.badges && !user.badges.some(b => b.id === 'reviewer')) {
+        const updatedBadges = [...user.badges, {
+          id: 'reviewer',
+          name: 'Reviewer',
+          icon: '📝',
+          description: 'Write 5 reviews',
+          dateEarned: new Date()
+        }];
+        await UserModel.update(req.user.id, { badges: updatedBadges });
+      }
     }
     
-    await user.save();
-    
-    const populatedReview = await Review.findById(review._id)
-      .populate('user', 'name profilePicture');
-    
-    res.status(201).json({ success: true, data: populatedReview });
+    res.status(201).json({ success: true, data: review });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -80,29 +75,27 @@ router.post('/', protect, upload.array('images', 3), async (req, res) => {
 // @route   PUT /api/reviews/:id
 router.put('/:id', protect, async (req, res) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await ReviewModel.findById(req.params.id);
     
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
     
-    if (review.user.toString() !== req.user.id) {
+    if (review.user !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     
-    review.rating = req.body.rating || review.rating;
-    review.comment = req.body.comment || review.comment;
-    
-    await review.save();
+    const updatedReview = await ReviewModel.update(req.params.id, {
+      rating: req.body.rating || review.rating,
+      comment: req.body.comment || review.comment
+    });
     
     // Update place average rating
-    const placeDoc = await Place.findById(review.place);
-    const reviews = await Review.find({ place: review.place });
+    const reviews = await ReviewModel.findAll({ place: review.place });
     const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-    placeDoc.rating = avgRating;
-    await placeDoc.save();
+    await PlaceModel.update(review.place, { rating: avgRating });
     
-    res.json({ success: true, data: review });
+    res.json({ success: true, data: updatedReview });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -111,27 +104,25 @@ router.put('/:id', protect, async (req, res) => {
 // @route   DELETE /api/reviews/:id
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const review = await ReviewModel.findById(req.params.id);
     
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
     
-    if (review.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (review.user !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     
     const placeId = review.place;
-    await review.deleteOne();
+    await ReviewModel.delete(req.params.id);
     
     // Update place average rating
-    const placeDoc = await Place.findById(placeId);
-    const reviews = await Review.find({ place: placeId });
+    const reviews = await ReviewModel.findAll({ place: placeId });
     const avgRating = reviews.length > 0 
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length 
       : 0;
-    placeDoc.rating = avgRating;
-    await placeDoc.save();
+    await PlaceModel.update(placeId, { rating: avgRating });
     
     res.json({ success: true, message: 'Review deleted' });
   } catch (error) {

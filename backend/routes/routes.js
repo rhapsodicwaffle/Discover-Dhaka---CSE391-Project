@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Route = require('../models/Route');
-const User = require('../models/User');
+const RouteModel = require('../models/RouteModel');
+const UserModel = require('../models/UserModel');
+const PlaceModel = require('../models/PlaceModel');
 const { protect } = require('../middleware/auth');
 
 // @route   GET /api/routes
@@ -13,9 +14,7 @@ router.get('/', async (req, res) => {
     if (type) query.type = type;
     if (isPublic === 'true') query.isPublic = true;
     
-    const routes = await Route.find(query)
-      .populate('user', 'name profilePicture')
-      .populate('places');
+    const routes = await RouteModel.findAll(query);
     
     res.json({ success: true, count: routes.length, data: routes });
   } catch (error) {
@@ -26,8 +25,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/routes/user/:userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const routes = await Route.find({ user: req.params.userId })
-      .populate('places');
+    const routes = await RouteModel.findAll({ user: req.params.userId });
     
     res.json({ success: true, count: routes.length, data: routes });
   } catch (error) {
@@ -38,16 +36,21 @@ router.get('/user/:userId', async (req, res) => {
 // @route   POST /api/routes
 router.post('/', protect, async (req, res) => {
   try {
-    const route = await Route.create({
+    const route = await RouteModel.create({
       ...req.body,
       user: req.user.id
     });
     
     // Add XP and save route to user
-    const user = await User.findById(req.user.id);
-    user.addXP(25);
-    user.savedRoutes.push(route._id);
-    await user.save();
+    const user = await UserModel.findById(req.user.id);
+    if (user) {
+      const currentXP = user.xp || 0;
+      const savedRoutes = user.savedRoutes || [];
+      await UserModel.update(req.user.id, { 
+        xp: currentXP + 25,
+        savedRoutes: [...savedRoutes, route.id]
+      });
+    }
     
     res.status(201).json({ success: true, data: route });
   } catch (error) {
@@ -58,17 +61,17 @@ router.post('/', protect, async (req, res) => {
 // @route   DELETE /api/routes/:id
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const route = await Route.findById(req.params.id);
+    const route = await RouteModel.findById(req.params.id);
     
     if (!route) {
       return res.status(404).json({ success: false, message: 'Route not found' });
     }
     
-    if (route.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (route.user !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
     
-    await route.deleteOne();
+    await RouteModel.delete(req.params.id);
     
     res.json({ success: true, message: 'Route deleted' });
   } catch (error) {
@@ -80,7 +83,6 @@ router.delete('/:id', protect, async (req, res) => {
 router.get('/generate/:type', async (req, res) => {
   try {
     const { type } = req.params;
-    const Place = require('../models/Place');
     
     let categoryMap = {
       'food': 'Food',
@@ -88,10 +90,12 @@ router.get('/generate/:type', async (req, res) => {
       'cultural': 'Culture'
     };
     
-    const places = await Place.find({ 
+    const allPlaces = await PlaceModel.findAll({ 
       category: categoryMap[type],
       isApproved: true 
-    }).limit(5);
+    });
+    
+    const places = allPlaces.slice(0, 5);
     
     if (places.length < 2) {
       return res.status(404).json({ 

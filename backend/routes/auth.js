@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const UserModel = require('../models/UserModel');
 const { protect } = require('../middleware/auth');
 
 // Generate JWT Token
@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
 
     // Check if user exists
-    let user = await User.findOne({ email });
+    let user = await UserModel.findByEmail(email);
     if (user) {
       return res.status(400).json({
         success: false,
@@ -37,7 +37,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user
-    user = await User.create({
+    user = await UserModel.create({
       name,
       email,
       password,
@@ -46,13 +46,13 @@ router.post('/register', async (req, res) => {
       level: 1
     });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(201).json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         profilePicture: user.profilePicture,
@@ -82,7 +82,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await UserModel.findByEmail(email);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -91,7 +91,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await UserModel.comparePassword(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -99,13 +99,13 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.json({
       success: true,
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         profilePicture: user.profilePicture,
@@ -132,16 +132,9 @@ router.post('/login', async (req, res) => {
 // @access  Private
 router.get('/me', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .populate('savedPlaces')
-      .populate({
-        path: 'savedRoutes',
-        populate: { path: 'places' }
-      });
-
     res.json({
       success: true,
-      user
+      user: req.user
     });
   } catch (error) {
     res.status(500).json({
@@ -158,26 +151,18 @@ router.put('/profile', protect, async (req, res) => {
   try {
     const { name, bio, profilePicture, isPublic } = req.body;
     
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (bio !== undefined) updates.bio = bio;
+    if (profilePicture !== undefined) updates.profilePicture = profilePicture;
+    if (isPublic !== undefined) updates.isPublic = isPublic;
 
-    // Update only provided fields
-    if (name !== undefined) user.name = name;
-    if (bio !== undefined) user.bio = bio;
-    if (profilePicture !== undefined) user.profilePicture = profilePicture;
-    if (isPublic !== undefined) user.isPublic = isPublic;
-
-    await user.save();
+    const user = await UserModel.update(req.user.id, updates);
 
     res.json({
       success: true,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         profilePicture: user.profilePicture,
@@ -204,19 +189,42 @@ router.put('/profile', protect, async (req, res) => {
 // @access  Private
 router.get('/liked-stories', protect, async (req, res) => {
   try {
-    const Story = require('../models/Story');
+    const supabase = require('../config/supabase');
     
-    const likedStories = await Story.find({ 
-      likes: req.user._id,
-      isApproved: true 
-    })
-      .populate('author', 'name profilePicture')
-      .sort('-createdAt');
+    const { data: stories, error } = await supabase
+      .from('stories')
+      .select(`
+        *,
+        author:users!stories_author_id_fkey(id, name, profile_picture)
+      `)
+      .contains('likes', [req.user.id])
+      .eq('is_approved', true)
+      .order('created_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+    
+    // Convert to match previous format
+    const convertedStories = stories.map(s => ({
+      _id: s.id,
+      id: s.id,
+      title: s.title,
+      content: s.content,
+      image: s.image,
+      tags: s.tags || [],
+      author: s.author ? {
+        id: s.author.id,
+        name: s.author.name,
+        profilePicture: s.author.profile_picture
+      } : null,
+      likes: s.likes || [],
+      likesCount: s.likes_count || 0,
+      createdAt: s.created_at
+    }));
     
     res.json({
       success: true,
-      count: likedStories.length,
-      data: likedStories
+      count: convertedStories.length,
+      data: convertedStories
     });
   } catch (error) {
     res.status(500).json({

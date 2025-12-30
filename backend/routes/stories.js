@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Story = require('../models/Story');
-const User = require('../models/User');
+const StoryModel = require('../models/StoryModel');
+const UserModel = require('../models/UserModel');
+const supabase = require('../config/supabase');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
@@ -12,16 +13,10 @@ router.get('/', async (req, res) => {
   try {
     const { tag } = req.query;
     
-    let query = { isApproved: true };
+    const query = { isApproved: true };
+    if (tag && tag !== 'All') query.tag = tag;
     
-    if (tag && tag !== 'All') {
-      query.tags = tag;
-    }
-    
-    const stories = await Story.find(query)
-      .populate('author', 'name profilePicture')
-      .populate('comments.user', 'name profilePicture')
-      .sort('-createdAt');
+    const stories = await StoryModel.findAll(query);
     
     res.json({
       success: true,
@@ -41,9 +36,7 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const story = await Story.findById(req.params.id)
-      .populate('author', 'name profilePicture bio')
-      .populate('comments.user', 'name profilePicture');
+    const story = await StoryModel.findById(req.params.id);
       
     if (!story) {
       return res.status(404).json({
@@ -80,23 +73,25 @@ router.post('/', protect, upload.array('images', 5), async (req, res) => {
       storyData.image = storyData.images[0];
     }
     
-    const story = await Story.create(storyData);
+    const story = await StoryModel.create(storyData);
     
     // Add XP to user
-    const user = await User.findById(req.user.id);
-    user.addXP(50);
-    
-    // Check if this is first story for Storyteller badge
-    const userStories = await Story.countDocuments({ author: req.user.id });
-    if (userStories === 1) {
-      const storytellerBadge = user.badges.find(b => b.name === 'Storyteller');
-      if (storytellerBadge && !storytellerBadge.earned) {
-        storytellerBadge.earned = true;
-        storytellerBadge.earnedAt = new Date();
+    const user = await UserModel.findById(req.user.id);
+    if (user) {
+      const currentXP = user.xp || 0;
+      await UserModel.update(req.user.id, { xp: currentXP + 50 });
+      
+      // Check if this is first story for Storyteller badge
+      const userStories = await StoryModel.count({ author: req.user.id });
+      if (userStories === 1 && user.badges) {
+        const storytellerBadge = user.badges.find(b => b.name === 'Storyteller');
+        if (storytellerBadge && !storytellerBadge.earned) {
+          storytellerBadge.earned = true;
+          storytellerBadge.earnedAt = new Date();
+          await UserModel.update(req.user.id, { badges: user.badges });
+        }
       }
     }
-    
-    await user.save();
     
     res.status(201).json({
       success: true,
@@ -115,7 +110,7 @@ router.post('/', protect, upload.array('images', 5), async (req, res) => {
 // @access  Private
 router.post('/:id/like', protect, async (req, res) => {
   try {
-    const story = await Story.findById(req.params.id);
+    const story = await StoryModel.findById(req.params.id);
     
     if (!story) {
       return res.status(404).json({
@@ -125,18 +120,23 @@ router.post('/:id/like', protect, async (req, res) => {
     }
     
     const likeIndex = story.likes.indexOf(req.user.id);
+    let updatedLikes;
+    let updatedLikesCount;
     
     if (likeIndex > -1) {
       // Unlike
-      story.likes.splice(likeIndex, 1);
-      story.likesCount -= 1;
+      updatedLikes = story.likes.filter(id => id !== req.user.id);
+      updatedLikesCount = story.likesCount - 1;
     } else {
       // Like
-      story.likes.push(req.user.id);
-      story.likesCount += 1;
+      updatedLikes = [...story.likes, req.user.id];
+      updatedLikesCount = story.likesCount + 1;
     }
     
-    await story.save();
+    const updatedStory = await StoryModel.update(req.params.id, { 
+      likes: updatedLikes,
+      likesCount: updatedLikesCount 
+    });
     
     res.json({
       success: true,
@@ -155,23 +155,24 @@ router.post('/:id/like', protect, async (req, res) => {
 // @access  Private
 router.post('/:id/comment', protect, async (req, res) => {
   try {
-    const story = await Story.findById(req.params.id);
+    // TODO: Comments are now in separate story_comments table
+    // Need to insert into story_comments table
+    const { data: comment, error } = await supabase
+      .from('story_comments')
+      .insert({
+        story_id: req.params.id,
+        user_id: req.user.id,
+        content: req.body.text
+      })
+      .select()
+      .single();
     
-    if (!story) {
-      return res.status(404).json({
-        success: false,
-        message: 'Story not found'
-      });
-    }
+    if (error) throw error;
     
-    story.comments.push({
-      user: req.user.id,
-      text: req.body.text
+    res.json({
+      success: true,
+      data: comment
     });
-    
-    await story.save();
-    
-    await story.populate('comments.user', 'name profilePicture');
     
     res.json({
       success: true,
@@ -190,7 +191,7 @@ router.post('/:id/comment', protect, async (req, res) => {
 // @access  Private
 router.delete('/:id', protect, async (req, res) => {
   try {
-    const story = await Story.findById(req.params.id);
+    const story = await StoryModel.findById(req.params.id);
     
     if (!story) {
       return res.status(404).json({
@@ -200,14 +201,14 @@ router.delete('/:id', protect, async (req, res) => {
     }
     
     // Check user owns story or is admin
-    if (story.author.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (story.author !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized'
       });
     }
     
-    await story.deleteOne();
+    await StoryModel.delete(req.params.id);
     
     res.json({
       success: true,

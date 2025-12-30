@@ -5,12 +5,20 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const path = require('path');
-const connectDB = require('./config/database');
+const supabase = require('./config/supabase');
 
 const app = express();
 
-// Connect to MongoDB
-connectDB();
+// Test Supabase connection
+(async () => {
+  try {
+    const { data, error } = await supabase.from('users').select('count');
+    if (error && error.code !== 'PGRST116') console.log('⚠️  Supabase connection issue:', error.message);
+    else console.log('✅ Supabase Connected');
+  } catch (err) {
+    console.log('⚠️  Supabase connection error:', err.message);
+  }
+})();
 
 // Middleware
 app.use(helmet());
