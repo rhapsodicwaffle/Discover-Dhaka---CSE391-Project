@@ -151,4 +151,79 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/auth/profile
+// @desc    Update user profile
+// @access  Private
+router.put('/profile', protect, async (req, res) => {
+  try {
+    const { name, bio, profilePicture, isPublic } = req.body;
+    
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Update only provided fields
+    if (name !== undefined) user.name = name;
+    if (bio !== undefined) user.bio = bio;
+    if (profilePicture !== undefined) user.profilePicture = profilePicture;
+    if (isPublic !== undefined) user.isPublic = isPublic;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture,
+        bio: user.bio,
+        xp: user.xp,
+        level: user.level,
+        badges: user.badges,
+        savedPlaces: user.savedPlaces,
+        savedRoutes: user.savedRoutes,
+        isPublic: user.isPublic,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// @route   GET /api/auth/liked-stories
+// @desc    Get user's liked stories
+// @access  Private
+router.get('/liked-stories', protect, async (req, res) => {
+  try {
+    const Story = require('../models/Story');
+    
+    const likedStories = await Story.find({ 
+      likes: req.user._id,
+      isApproved: true 
+    })
+      .populate('author', 'name profilePicture')
+      .sort('-createdAt');
+    
+    res.json({
+      success: true,
+      count: likedStories.length,
+      data: likedStories
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

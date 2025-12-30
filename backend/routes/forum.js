@@ -7,7 +7,7 @@ const { protect, admin } = require('../middleware/auth');
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = {};
+    let query = { isApproved: true };
     
     if (category && category !== 'All') {
       query.category = category;

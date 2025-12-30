@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Place = require('../models/Place');
 const Story = require('../models/Story');
 const Event = require('../models/Event');
+const ForumThread = require('../models/ForumThread');
 const { protect, admin } = require('../middleware/auth');
 
 // @route   GET /api/admin/stats
@@ -16,6 +17,8 @@ router.get('/stats', protect, admin, async (req, res) => {
     
     const pendingEvents = await Event.countDocuments({ isApproved: false });
     const pendingPlaces = await Place.countDocuments({ isApproved: false });
+    const pendingStories = await Story.countDocuments({ isApproved: false });
+    const pendingThreads = await ForumThread.countDocuments({ isApproved: false });
     
     const recentUsers = await User.find()
       .select('name email createdAt')
@@ -31,7 +34,9 @@ router.get('/stats', protect, admin, async (req, res) => {
           totalStories,
           totalEvents,
           pendingEvents,
-          pendingPlaces
+          pendingPlaces,
+          pendingStories,
+          pendingThreads
         },
         recentUsers
       }
@@ -105,6 +110,14 @@ router.get('/pending/:type', protect, admin, async (req, res) => {
     } else if (type === 'places') {
       data = await Place.find({ isApproved: false })
         .sort('-createdAt');
+    } else if (type === 'stories') {
+      data = await Story.find({ isApproved: false })
+        .populate('author', 'name email')
+        .sort('-createdAt');
+    } else if (type === 'threads') {
+      data = await ForumThread.find({ isApproved: false })
+        .populate('author', 'name email')
+        .sort('-createdAt');
     } else {
       return res.status(400).json({ success: false, message: 'Invalid type' });
     }
@@ -125,6 +138,10 @@ router.put('/approve/:type/:id', protect, admin, async (req, res) => {
       item = await Event.findById(id);
     } else if (type === 'place') {
       item = await Place.findById(id);
+    } else if (type === 'story') {
+      item = await Story.findById(id);
+    } else if (type === 'thread') {
+      item = await ForumThread.findById(id);
     } else {
       return res.status(400).json({ success: false, message: 'Invalid type' });
     }
@@ -137,6 +154,30 @@ router.put('/approve/:type/:id', protect, admin, async (req, res) => {
     await item.save();
     
     res.json({ success: true, data: item });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// @route   DELETE /api/admin/reject/:type/:id
+router.delete('/reject/:type/:id', protect, admin, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    let Model;
+    
+    if (type === 'event') Model = Event;
+    else if (type === 'place') Model = Place;
+    else if (type === 'story') Model = Story;
+    else if (type === 'thread') Model = ForumThread;
+    else return res.status(400).json({ success: false, message: 'Invalid type' });
+    
+    const item = await Model.findById(id);
+    if (!item) {
+      return res.status(404).json({ success: false, message: `${type} not found` });
+    }
+    
+    await item.deleteOne();
+    res.json({ success: true, message: `${type} rejected and deleted` });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

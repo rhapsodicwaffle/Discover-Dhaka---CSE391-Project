@@ -7,13 +7,15 @@ const { protect, admin } = require('../middleware/auth');
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = { isApproved: true, date: { $gte: new Date() } };
+    let query = { isApproved: true };
     
     if (category && category !== 'All') {
       query.category = category;
     }
     
-    const events = await Event.find(query).sort('date');
+    const events = await Event.find(query)
+      .populate('createdBy', 'name profilePicture')
+      .sort('-date');
     
     res.json({ success: true, count: events.length, data: events });
   } catch (error) {

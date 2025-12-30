@@ -1,21 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateRoute from './CreateRoute';
+import { authAPI } from '../../api/services';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [showCreateRoute, setShowCreateRoute] = useState(false);
+  const [likedStories, setLikedStories] = useState([]);
+  const [loadingLiked, setLoadingLiked] = useState(false);
   const [editForm, setEditForm] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
     isPublic: user?.isPublic !== false
   });
 
+  useEffect(() => {
+    if (activeTab === 'liked') {
+      fetchLikedStories();
+    }
+  }, [activeTab]);
+
+  const fetchLikedStories = async () => {
+    setLoadingLiked(true);
+    try {
+      const response = await authAPI.getLikedStories();
+      setLikedStories(response.data);
+    } catch (error) {
+      console.error('Error fetching liked stories:', error);
+    } finally {
+      setLoadingLiked(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '👤' },
     { id: 'stories', label: 'My Stories', icon: '📖', count: user?.myStories?.length || 0 },
+    { id: 'liked', label: 'Liked Stories', icon: '❤️' },
     { id: 'places', label: 'Saved Places', icon: '📍', count: user?.savedPlaces?.length || 0 },
     { id: 'routes', label: 'My Routes', icon: '🗺️', count: user?.savedRoutes?.length || 0 },
     { id: 'badges', label: 'Badges', icon: '🏆', count: user?.badges?.filter(b => b.earned).length || 0 }
@@ -240,6 +262,50 @@ const Profile = () => {
                 <h3 style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>No stories yet</h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Share your first story to get started!</p>
                 <a href="/stories"><button className="btn btn-primary">Create Story</button></a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'liked' && (
+          <div>
+            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>Liked Stories ({likedStories.length})</h2>
+            {loadingLiked ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div className="rickshaw-wheel animate-spin"></div>
+              </div>
+            ) : likedStories.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                {likedStories.map((story) => (
+                  <div key={story._id} className="card">
+                    {story.image && (
+                      <img src={story.image} alt={story.title} style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }} />
+                    )}
+                    <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>{story.title}</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px' }}>
+                      {story.content?.substring(0, 120)}...
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <img 
+                        src={story.author?.profilePicture || `https://ui-avatars.com/api/?name=${story.author?.name}`} 
+                        alt={story.author?.name}
+                        style={{ width: '24px', height: '24px', borderRadius: '50%' }}
+                      />
+                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{story.author?.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      <span>❤️ {story.likesCount || 0}</span>
+                      <span>💬 {story.comments?.length || 0}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>❤️</div>
+                <h3 style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>No liked stories yet</h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Start exploring and like stories to see them here!</p>
+                <a href="/stories"><button className="btn btn-primary">Explore Stories</button></a>
               </div>
             )}
           </div>

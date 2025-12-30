@@ -42,6 +42,10 @@ const forumThreadSchema = new mongoose.Schema({
   isLocked: {
     type: Boolean,
     default: false
+  },
+  isApproved: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

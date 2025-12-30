@@ -23,11 +23,13 @@ const EventCard = ({ event, onAttend }) => {
   };
 
   return (
-    <div className="card" style={{ overflow: 'hidden' }}>
+    <div className="card hover-lift" style={{ overflow: 'hidden', border: '3px solid transparent', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <img 
         src={event.image || event.imageUrl || 'https://via.placeholder.com/400x180'} 
         alt={event.title || event.name}
-        style={{ width: '100%', height: '180px', objectFit: 'cover' }}
+        style={{ width: '100%', height: '180px', objectFit: 'cover', transition: 'transform 0.3s ease' }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
       />
       <div style={{ padding: '20px' }}>
         <div style={{ marginBottom: '12px' }}>

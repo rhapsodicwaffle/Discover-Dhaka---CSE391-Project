@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.getCurrentUser();
       if (response.success) {
-        setUser(response.data);
+        setUser(response.user);
         setIsAuthenticated(true);
       }
     } catch (error) {
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login(email, password);
       if (response.success) {
         localStorage.setItem('token', response.token);
-        setUser(response.data);
+        setUser(response.user);
         setIsAuthenticated(true);
         return true;
       }
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(name, email, password);
       if (response.success) {
         localStorage.setItem('token', response.token);
-        setUser(response.data);
+        setUser(response.user);
         setIsAuthenticated(true);
         return true;
       }
@@ -76,9 +76,15 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (updates) => {
     try {
-      await loadUser(); // Reload user to get updated data
+      const response = await authAPI.updateProfile(updates);
+      if (response.success) {
+        setUser(response.user);
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Error updating profile:', error);
+      return false;
     }
   };
 

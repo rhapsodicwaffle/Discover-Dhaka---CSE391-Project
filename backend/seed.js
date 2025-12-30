@@ -17,6 +17,7 @@ const mockPlaces = [
     lng: 90.3868,
     category: "History",
     rating: 4.5,
+    address: "Lalbagh Road, Dhaka 1211",
     image: "https://images.unsplash.com/photo-1585159812596-fac104f2f069?w=500",
     description: "A 17th century Mughal fort complex that stands as a symbol of the city's historical heritage.",
     isApproved: true
@@ -28,6 +29,7 @@ const mockPlaces = [
     lng: 90.4063,
     category: "History",
     rating: 4.3,
+    address: "Kumartoli, Dhaka 1100",
     image: "https://images.unsplash.com/photo-1598960506275-1b7fc6cf0648?w=500",
     description: "The Pink Palace - former residential palace of the Nawab of Dhaka.",
     isApproved: true
@@ -39,6 +41,7 @@ const mockPlaces = [
     lng: 90.3992,
     category: "Culture",
     rating: 4.4,
+    address: "Armanitola, Dhaka 1100",
     image: "https://images.unsplash.com/photo-1564769662454-4dd8f9c95025?w=500",
     description: "Beautiful mosque adorned with Japanese and English china tiles.",
     isApproved: true
@@ -48,8 +51,9 @@ const mockPlaces = [
     name: "Dhaka University",
     lat: 23.7311,
     lng: 90.3969,
-    category: "Education",
+    category: "Culture",
     rating: 4.2,
+    address: "Dhaka University Road, Dhaka 1000",
     image: "https://images.unsplash.com/photo-1562774053-701939374585?w=500",
     description: "Historic university campus with colonial architecture.",
     isApproved: true
@@ -61,6 +65,7 @@ const mockPlaces = [
     lng: 90.4100,
     category: "Nature",
     rating: 4.0,
+    address: "Sadarghat, Dhaka 1100",
     image: "https://images.unsplash.com/photo-1564769625905-4548637f14ea?w=500",
     description: "One of the largest river ports in the world, bustling with activity.",
     isApproved: true
@@ -72,6 +77,7 @@ const mockPlaces = [
     lng: 90.4043,
     category: "Nature",
     rating: 4.1,
+    address: "Hatirjheel, Dhaka 1205",
     image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500",
     description: "Beautiful lake with walking paths and recreational facilities.",
     isApproved: true
@@ -83,6 +89,7 @@ const mockPlaces = [
     lng: 90.3943,
     category: "Culture",
     rating: 4.3,
+    address: "Shahbag, Dhaka 1000",
     image: "https://images.unsplash.com/photo-1567696911980-2eed69a46042?w=500",
     description: "Premier museum showcasing Bangladesh's rich cultural heritage.",
     isApproved: true
@@ -94,17 +101,19 @@ const mockPlaces = [
     lng: 90.4125,
     category: "Food",
     rating: 4.6,
+    address: "Banani, Dhaka 1213",
     image: "https://images.unsplash.com/photo-1585937421612-70e008a2bf0f?w=500",
     description: "Famous restaurant serving authentic Bangladeshi biryani.",
-    isApprored: true
+    isApproved: true
   }
 ];
 
 const mockEvents = [
   {
+    name: "Pohela Boishakh Celebration",
     title: "Pohela Boishakh Celebration",
     description: "Traditional Bengali New Year celebration with cultural programs and festivities.",
-    category: "Cultural",
+    category: "Other",
     date: new Date('2024-04-14'),
     time: "08:00 AM",
     venue: "Ramna Park",
@@ -114,6 +123,7 @@ const mockEvents = [
     isApproved: true
   },
   {
+    name: "Dhaka Art Summit",
     title: "Dhaka Art Summit",
     description: "International art exhibition featuring contemporary artists from South Asia.",
     category: "Art",
@@ -126,6 +136,7 @@ const mockEvents = [
     isApproved: true
   },
   {
+    name: "Food Festival Dhaka",
     title: "Food Festival Dhaka",
     description: "Annual food festival showcasing the best of Bangladeshi cuisine.",
     category: "Food",
@@ -150,30 +161,30 @@ const seedDatabase = async () => {
     await Event.deleteMany({});
     
     console.log('Creating admin user...');
-    const hashedPassword = await bcrypt.hash('admin123', 10);
     const adminUser = await User.create({
       name: 'Admin User',
-      email: 'admin@discoverdha.com',
-      password: hashedPassword,
+      email: 'admin@discoverdhaka.com',
+      password: 'admin123',
       role: 'admin',
       xp: 1000,
       level: 10,
       badges: [
-        { id: 'explorer', name: 'Explorer', icon: '🗺️', description: 'Visit 10 places', dateEarned: new Date() },
-        { id: 'storyteller', name: 'Storyteller', icon: '✍️', description: 'Share your first story', dateEarned: new Date() }
+        { id: 1, name: 'Explorer', icon: '🗺️', earned: true, description: 'Joined Discover Dhaka', earnedAt: new Date() },
+        { id: 2, name: 'Storyteller', icon: '📖', earned: true, description: 'Share your first story', earnedAt: new Date() },
+        { id: 3, name: 'Foodie', icon: '🍜', earned: true, description: 'Visit 5 food places', earnedAt: new Date() }
       ]
     });
     
     console.log('Creating test user...');
-    const testPassword = await bcrypt.hash('test123', 10);
     const testUser = await User.create({
       name: 'Test User',
       email: 'test@test.com',
-      password: testPassword,
+      password: 'test123',
       xp: 250,
       level: 3,
       badges: [
-        { id: 'firstSteps', name: 'First Steps', icon: '👣', description: 'Create your account', dateEarned: new Date() }
+        { id: 1, name: 'Explorer', icon: '🗺️', earned: true, description: 'Joined Discover Dhaka', earnedAt: new Date() },
+        { id: 2, name: 'Storyteller', icon: '📖', earned: false, description: 'Share your first story' }
       ]
     });
     

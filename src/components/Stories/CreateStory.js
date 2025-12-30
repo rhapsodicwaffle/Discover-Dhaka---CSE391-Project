@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { storiesAPI } from '../../api/services';
+import { storiesAPI, placesAPI } from '../../api/services';
 
 const CreateStory = ({ onClose, onSubmit }) => {
   const { user, refreshUser } = useAuth();
@@ -14,6 +14,21 @@ const CreateStory = ({ onClose, onSubmit }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [places, setPlaces] = useState([]);
+
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      try {
+        const response = await placesAPI.getAll();
+        if (response.success) {
+          setPlaces(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch places:', err);
+      }
+    };
+    fetchPlaces();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,10 +46,17 @@ const CreateStory = ({ onClose, onSubmit }) => {
     
     try {
       const storyData = {
-        ...formData,
+        title: formData.title,
+        content: formData.content,
+        placeName: formData.placeName,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         images
       };
+      
+      // Only include place if it's selected
+      if (formData.place && formData.place !== '') {
+        storyData.place = formData.place;
+      }
       
       const response = await storiesAPI.create(storyData);
       if (response.success) {
@@ -96,6 +118,27 @@ const CreateStory = ({ onClose, onSubmit }) => {
                 placeholder="Where did this happen?"
                 disabled={loading}
               />
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>Link to Place (Optional)</label>
+              <select
+                name="place"
+                value={formData.place}
+                onChange={handleChange}
+                className="form-input"
+                disabled={loading}
+              >
+                <option value="">-- No place selected --</option>
+                {places.map(place => (
+                  <option key={place._id} value={place._id}>
+                    {place.name} ({place.category})
+                  </option>
+                ))}
+              </select>
+              <div style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                Link your story to a specific place in Dhaka
+              </div>
             </div>
             
             <div style={{ marginBottom: '16px' }}>

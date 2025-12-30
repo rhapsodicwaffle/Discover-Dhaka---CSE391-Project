@@ -31,8 +31,9 @@ const Login = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="rickshaw-pattern">
-      <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '40px', margin: '20px' }}>
+      <div className="card animate-scale-in" style={{ width: '100%', maxWidth: '420px', padding: '40px', margin: '20px', boxShadow: '0 12px 40px rgba(255, 107, 53, 0.2)' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div className="rickshaw-wheel animate-pulse" style={{ margin: '0 auto 20px' }}></div>
           <h1 className="gradient-text" style={{ fontSize: '32px', fontWeight: '700', marginBottom: '8px' }}>Discover Dhaka</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Uncover the heart of Dhaka</p>
         </div>

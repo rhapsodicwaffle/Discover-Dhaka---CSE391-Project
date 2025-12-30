@@ -40,12 +40,7 @@ const InteractiveMap = () => {
       setError('Failed to load places');
       console.error(err);
     } finally {
-      se{error && (
-          <div style={{ padding: '12px', background: '#fee', color: '#c33', borderRadius: '8px', marginBottom: '16px' }}>
-            {error}
-          </div>
-        )}
-        tLoading(false);
+      setLoading(false);
     }
   };
 
@@ -66,6 +61,11 @@ const InteractiveMap = () => {
 
   return (
     <div style={{ height: '100%' }}>
+      {error && (
+        <div style={{ padding: '12px', background: '#fee', color: '#c33', borderRadius: '8px', margin: '16px' }}>
+          {error}
+        </div>
+      )}
       <div style={{ padding: '20px', background: 'white', borderBottom: '1px solid var(--border)' }}>
         <input
           type="text"
@@ -91,6 +91,10 @@ const InteractiveMap = () => {
               style={{ cursor: 'pointer', padding: '8px 16px', border: 'none', fontSize: '14px' }}
             >
               {category}
+            </button>
+          ))}
+        </div>
+      </div>
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 260px)' }}>
           <div style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>Loading places...</div>
@@ -107,11 +111,6 @@ const InteractiveMap = () => {
           />
           {filteredPlaces.map(place => (
             <Marker key={place._id} position={[place.lat, place.lng]}>
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        {filteredPlaces.map(place => (
-          <Marker key={place.id} position={[place.lat, place.lng]}>
             <Popup>
               <div style={{ minWidth: '200px' }}>
                 <img
@@ -127,7 +126,16 @@ const InteractiveMap = () => {
                   {place.description}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '14px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', al_id) ? 'var(--primary)' : 'white',
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>⭐ {place.rating || 'N/A'}</span>
+                    <span>👥 {place.visitors || 0} visitors</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleSavePlace(place)}
+                  style={{
+                    padding: '8px 16px',
+                    background: isPlaceSaved(place._id) ? 'var(--primary)' : 'white',
                     color: isPlaceSaved(place._id) ? 'white' : 'var(--primary)',
                     border: `1px solid var(--primary)`,
                     borderRadius: '6px',
@@ -143,17 +151,7 @@ const InteractiveMap = () => {
           </Marker>
           ))}
         </MapContainer>
-      )}ontWeight: '600',
-                    fontSize: '14px'
-                  }}
-                >
-                  {isPlaceSaved(place.id) ? '✓ Saved' : '+ Save Place'}
-                </button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      )}
     </div>
   );
 };

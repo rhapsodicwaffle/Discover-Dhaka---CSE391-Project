@@ -11,6 +11,8 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [pendingEvents, setPendingEvents] = useState([]);
   const [pendingPlaces, setPendingPlaces] = useState([]);
+  const [pendingStories, setPendingStories] = useState([]);
+  const [pendingThreads, setPendingThreads] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -29,17 +31,21 @@ const AdminDashboard = () => {
 
     try {
       setLoading(true);
-      const [statsRes, usersRes, eventsRes, placesRes] = await Promise.all([
+      const [statsRes, usersRes, eventsRes, placesRes, storiesRes, threadsRes] = await Promise.all([
         axios.get(`${API_BASE}/admin/stats`, config),
         axios.get(`${API_BASE}/admin/users`, config),
         axios.get(`${API_BASE}/admin/pending/events`, config),
-        axios.get(`${API_BASE}/admin/pending/places`, config)
+        axios.get(`${API_BASE}/admin/pending/places`, config),
+        axios.get(`${API_BASE}/admin/pending/stories`, config),
+        axios.get(`${API_BASE}/admin/pending/threads`, config)
       ]);
 
       if (statsRes.data.success) setStats(statsRes.data.data);
       if (usersRes.data.success) setUsers(usersRes.data.data);
       if (eventsRes.data.success) setPendingEvents(eventsRes.data.data);
       if (placesRes.data.success) setPendingPlaces(placesRes.data.data);
+      if (storiesRes.data.success) setPendingStories(storiesRes.data.data);
+      if (threadsRes.data.success) setPendingThreads(threadsRes.data.data);
     } catch (err) {
       console.error('Failed to fetch admin data:', err);
     } finally {
@@ -56,6 +62,19 @@ const AdminDashboard = () => {
       fetchData();
     } catch (err) {
       alert('Failed to approve content');
+    }
+  };
+
+  const rejectContent = async (type, id) => {
+    if (!window.confirm('Are you sure you want to reject and delete this content?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`${API_BASE}/admin/reject/${type}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      alert('Failed to reject content');
     }
   };
 
@@ -179,6 +198,16 @@ const AdminDashboard = () => {
                 <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Pending Places</div>
                 <div style={{ fontSize: '32px', fontWeight: '700', color: '#4ECDC4' }}>{stats.overview.pendingPlaces}</div>
               </div>
+              <div className="card animate-slide-up" style={{ padding: '24px', border: '3px solid #FFD93D', animationDelay: '0.2s' }}>
+                <div style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Pending Stories</div>
+                <div style={{ fontSize: '32px', fontWeight: '700', color: '#FFA500' }}>{stats.overview.pendingStories}</div>
+              </div>
+              <div className="card animate-slide-up" style={{ padding: '24px', border: '3px solid #6BCB77', animationDelay: '0.3s' }}>
+                <div style={{ fontSize: '24px', marginBottom: '12px' }}>⏳</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Pending Threads</div>
+                <div style={{ fontSize: '32px', fontWeight: '700', color: '#4CAF50' }}>{stats.overview.pendingThreads}</div>
+              </div>
             </div>
 
             <div className="card animate-fade-in" style={{ padding: '24px', animationDelay: '0.4s' }}>
@@ -272,19 +301,28 @@ const AdminDashboard = () => {
                   {pendingEvents.map((event, idx) => (
                     <div key={event._id} className="animate-slide-in" style={{ padding: '16px', background: '#f9f9f9', borderRadius: '8px', border: '2px solid #FF6B35', animationDelay: `${idx * 0.1}s` }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>{event.title}</h4>
                           <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                             By {event.createdBy?.name} • {event.category}
                           </div>
                         </div>
-                        <button
-                          onClick={() => approveContent('event', event._id)}
-                          className="btn"
-                          style={{ background: 'linear-gradient(135deg, #4ECDC4, #44A08D)' }}
-                        >
-                          ✓ Approve
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => approveContent('event', event._id)}
+                            className="btn"
+                            style={{ background: 'linear-gradient(135deg, #4ECDC4, #44A08D)' }}
+                          >
+                            ✓ Approve
+                          </button>
+                          <button
+                            onClick={() => rejectContent('event', event._id)}
+                            className="btn"
+                            style={{ background: 'linear-gradient(135deg, #FF6B6B, #EE5A6F)' }}
+                          >
+                            ✗ Reject
+                          </button>
+                        </div>
                       </div>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '8px' }}>{event.description}</p>
                       <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -311,13 +349,98 @@ const AdminDashboard = () => {
                       <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
                         {place.description?.substring(0, 100)}...
                       </p>
-                      <button
-                        onClick={() => approveContent('place', place._id)}
-                        className="btn"
-                        style={{ width: '100%', background: 'linear-gradient(135deg, #A8E6CF, #56AB91)' }}
-                      >
-                        ✓ Approve
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => approveContent('place', place._id)}
+                          className="btn"
+                          style={{ flex: 1, background: 'linear-gradient(135deg, #A8E6CF, #56AB91)' }}
+                        >
+                          ✓ Approve
+                        </button>
+                        <button
+                          onClick={() => rejectContent('place', place._id)}
+                          className="btn"
+                          style={{ flex: 1, background: 'linear-gradient(135deg, #FF6B6B, #EE5A6F)' }}
+                        >
+                          ✗ Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card animate-fade-in" style={{ padding: '24px', marginTop: '24px', animationDelay: '0.3s' }}>
+              <h3 style={{ marginBottom: '20px', fontSize: '20px', fontWeight: '600' }}>⏳ Pending Stories ({pendingStories.length})</h3>
+              {pendingStories.length === 0 ? (
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px' }}>No pending stories</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {pendingStories.map((story, idx) => (
+                    <div key={story._id} className="animate-scale-in" style={{ padding: '16px', background: '#f9f9f9', borderRadius: '8px', border: '2px solid #FFD93D', animationDelay: `${idx * 0.1}s` }}>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600' }}>{story.title}</h4>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                        By {story.author?.name}
+                      </div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
+                        {story.content?.substring(0, 120)}...
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => approveContent('story', story._id)}
+                          className="btn"
+                          style={{ flex: 1, background: 'linear-gradient(135deg, #FFD93D, #FFA500)' }}
+                        >
+                          ✓ Approve
+                        </button>
+                        <button
+                          onClick={() => rejectContent('story', story._id)}
+                          className="btn"
+                          style={{ flex: 1, background: 'linear-gradient(135deg, #FF6B6B, #EE5A6F)' }}
+                        >
+                          ✗ Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card animate-fade-in" style={{ padding: '24px', marginTop: '24px', animationDelay: '0.4s' }}>
+              <h3 style={{ marginBottom: '20px', fontSize: '20px', fontWeight: '600' }}>⏳ Pending Forum Threads ({pendingThreads.length})</h3>
+              {pendingThreads.length === 0 ? (
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px' }}>No pending threads</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {pendingThreads.map((thread, idx) => (
+                    <div key={thread._id} className="animate-slide-in" style={{ padding: '16px', background: '#f9f9f9', borderRadius: '8px', border: '2px solid #6BCB77', animationDelay: `${idx * 0.1}s` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>{thread.title}</h4>
+                          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            By {thread.author?.name} • {thread.category}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => approveContent('thread', thread._id)}
+                            className="btn"
+                            style={{ background: 'linear-gradient(135deg, #6BCB77, #4CAF50)' }}
+                          >
+                            ✓ Approve
+                          </button>
+                          <button
+                            onClick={() => rejectContent('thread', thread._id)}
+                            className="btn"
+                            style={{ background: 'linear-gradient(135deg, #FF6B6B, #EE5A6F)' }}
+                          >
+                            ✗ Reject
+                          </button>
+                        </div>
+                      </div>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{thread.content?.substring(0, 150)}...</p>
                     </div>
                   ))}
                 </div>
