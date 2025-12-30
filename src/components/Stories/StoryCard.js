@@ -16,10 +16,17 @@ const StoryCard = ({ story, onLike }) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return 'https://via.placeholder.com/400x200';
+    if (imagePath.startsWith('http')) return imagePath;
+    // Legacy support for old /uploads/ paths
+    return `http://localhost:5000${imagePath}`;
+  };
+
   return (
     <div className="card hover-lift" style={{ overflow: 'hidden', border: '3px solid transparent', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <img 
-        src={story.images?.[0] || story.image || 'https://via.placeholder.com/400x200'} 
+        src={getImageUrl(story.images?.[0] || story.image)} 
         alt={story.title}
         style={{ width: '100%', height: '200px', objectFit: 'cover', transition: 'transform 0.3s ease' }}
         onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}

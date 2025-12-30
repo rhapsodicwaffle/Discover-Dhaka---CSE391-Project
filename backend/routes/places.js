@@ -3,6 +3,7 @@ const router = express.Router();
 const PlaceModel = require('../models/PlaceModel');
 const { protect, admin } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { uploadToSupabase, generateFilename } = require('../utils/supabaseUpload');
 
 // @route   GET /api/places
 // @desc    Get all places
@@ -69,8 +70,11 @@ router.post('/', protect, admin, upload.single('image'), async (req, res) => {
       createdBy: req.user.id
     };
     
+    // Upload image to Supabase Storage
     if (req.file) {
-      placeData.image = `/uploads/${req.file.filename}`;
+      const filename = generateFilename(req.file.originalname);
+      const imageUrl = await uploadToSupabase(req.file.buffer, 'places', filename, req.file.mimetype);
+      placeData.image = imageUrl;
     }
     
     const place = await PlaceModel.create(placeData);

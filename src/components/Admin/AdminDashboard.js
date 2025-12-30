@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import CreatePlace from './CreatePlace';
 
 const AdminDashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -14,6 +15,7 @@ const AdminDashboard = () => {
   const [pendingStories, setPendingStories] = useState([]);
   const [pendingThreads, setPendingThreads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCreatePlace, setShowCreatePlace] = useState(false);
 
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -121,12 +123,28 @@ const AdminDashboard = () => {
       <div style={{ background: 'linear-gradient(135deg, #FF6B35, #F7931E)', padding: '40px 0', marginBottom: '32px', position: 'relative', overflow: 'hidden' }}>
         <div className="rickshaw-border"></div>
         <div className="container">
-          <h1 className="animate-slide-in" style={{ color: 'white', marginBottom: '12px', fontSize: '36px', fontWeight: '700', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-            🎨 Admin Dashboard
-          </h1>
-          <p style={{ color: 'white', opacity: 0.9, fontSize: '18px' }}>
-            Manage users, approve content, and monitor platform statistics
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 className="animate-slide-in" style={{ color: 'white', marginBottom: '12px', fontSize: '36px', fontWeight: '700', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+                🎨 Admin Dashboard
+              </h1>
+              <p style={{ color: 'white', opacity: 0.9, fontSize: '18px', margin: 0 }}>
+                Manage users, approve content, and monitor platform statistics
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowCreatePlace(true)}
+              className="btn"
+              style={{ 
+                background: 'white', 
+                color: 'var(--primary)', 
+                fontWeight: '600',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+              }}
+            >
+              + Add New Place
+            </button>
+          </div>
         </div>
       </div>
 
@@ -458,6 +476,17 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Create Place Modal */}
+      {showCreatePlace && (
+        <CreatePlace 
+          onClose={() => setShowCreatePlace(false)}
+          onSuccess={() => {
+            fetchData();
+            setShowCreatePlace(false);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ const PlaceModel = require('../models/PlaceModel');
 const UserModel = require('../models/UserModel');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { uploadToSupabase, generateFilename } = require('../utils/supabaseUpload');
 
 // @route   GET /api/reviews/place/:placeId
 router.get('/place/:placeId', async (req, res) => {
@@ -31,7 +32,15 @@ router.post('/', protect, upload.array('images', 3), async (req, res) => {
       });
     }
     
-    const images = req.files ? req.files.map(file => `/uploads/${file.filename}`) : [];
+    // Upload images to Supabase Storage
+    const images = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const filename = generateFilename(file.originalname);
+        const imageUrl = await uploadToSupabase(file.buffer, 'places', filename, file.mimetype);
+        images.push(imageUrl);
+      }
+    }
     
     const review = await ReviewModel.create({
       place,

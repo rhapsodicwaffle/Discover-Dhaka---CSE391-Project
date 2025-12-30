@@ -18,7 +18,7 @@ const Login = () => {
     try {
       const success = await login(email, password);
       if (success) {
-        navigate('/map');
+        navigate('/');
       } else {
         setError('Invalid credentials');
       }

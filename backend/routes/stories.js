@@ -5,6 +5,7 @@ const UserModel = require('../models/UserModel');
 const supabase = require('../config/supabase');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { uploadToSupabase, generateFilename } = require('../utils/supabaseUpload');
 
 // @route   GET /api/stories
 // @desc    Get all stories
@@ -68,9 +69,16 @@ router.post('/', protect, upload.array('images', 5), async (req, res) => {
       tags: req.body.tags ? req.body.tags.split(',').map(tag => tag.trim()) : []
     };
     
+    // Upload images to Supabase Storage
     if (req.files && req.files.length > 0) {
-      storyData.images = req.files.map(file => `/uploads/${file.filename}`);
-      storyData.image = storyData.images[0];
+      const imageUrls = [];
+      for (const file of req.files) {
+        const filename = generateFilename(file.originalname);
+        const imageUrl = await uploadToSupabase(file.buffer, 'stories', filename, file.mimetype);
+        imageUrls.push(imageUrl);
+      }
+      storyData.images = imageUrls;
+      storyData.image = imageUrls[0];
     }
     
     const story = await StoryModel.create(storyData);

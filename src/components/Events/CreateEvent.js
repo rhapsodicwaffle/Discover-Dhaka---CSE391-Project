@@ -5,7 +5,7 @@ import apiClient from '../../api/client';
 const CreateEvent = ({ onClose, onSubmit }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     category: 'Other',
     description: '',
     date: '',
@@ -61,8 +61,8 @@ const CreateEvent = ({ onClose, onSubmit }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Event Name *</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="title"
+                value={formData.title}
                 onChange={handleChange}
                 required
                 className="form-input"

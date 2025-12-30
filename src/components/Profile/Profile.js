@@ -4,12 +4,13 @@ import CreateRoute from './CreateRoute';
 import { authAPI } from '../../api/services';
 
 const Profile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [showCreateRoute, setShowCreateRoute] = useState(false);
   const [likedStories, setLikedStories] = useState([]);
   const [loadingLiked, setLoadingLiked] = useState(false);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
   const [editForm, setEditForm] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
@@ -48,14 +49,21 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  const handleProfilePictureChange = (e) => {
+  const handleProfilePictureChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateProfile({ profilePicture: reader.result });
-      };
-      reader.readAsDataURL(file);
+      setUploadingPicture(true);
+      try {
+        const response = await authAPI.uploadProfilePicture(file);
+        if (response.success) {
+          await refreshUser(); // Refresh user data to get the new profile picture
+        }
+      } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        alert('Failed to upload profile picture. Please try again.');
+      } finally {
+        setUploadingPicture(false);
+      }
     }
   };
 
@@ -100,11 +108,18 @@ const Profile = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: 'pointer',
-                border: '3px solid white'
+                cursor: uploadingPicture ? 'not-allowed' : 'pointer',
+                border: '3px solid white',
+                opacity: uploadingPicture ? 0.6 : 1
               }}>
-                📷
-                <input type="file" accept="image/*" onChange={handleProfilePictureChange} style={{ display: 'none' }} />
+                {uploadingPicture ? '⏳' : '📷'}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleProfilePictureChange} 
+                  style={{ display: 'none' }}
+                  disabled={uploadingPicture}
+                />
               </label>
             </div>
             <div style={{ flex: 1, color: 'white' }}>

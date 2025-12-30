@@ -21,6 +21,16 @@ export const authAPI = {
     return response.data;
   },
   
+  uploadProfilePicture: async (imageFile) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const response = await apiClient.post('/users/profile/picture', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+  
   getLikedStories: async () => {
     const response = await apiClient.get('/auth/liked-stories');
     return response.data;

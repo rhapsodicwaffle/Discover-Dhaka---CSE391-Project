@@ -3,6 +3,7 @@ const router = express.Router();
 const UserModel = require('../models/UserModel');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { uploadToSupabase, generateFilename } = require('../utils/supabaseUpload');
 
 // @route   GET /api/users/:id
 router.get('/:id', async (req, res) => {
@@ -43,8 +44,12 @@ router.post('/profile/picture', protect, upload.single('image'), async (req, res
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     
+    // Upload image to Supabase Storage
+    const filename = generateFilename(req.file.originalname);
+    const imageUrl = await uploadToSupabase(req.file.buffer, 'profiles', filename, req.file.mimetype);
+    
     const user = await UserModel.update(req.user.id, {
-      profilePicture: `/uploads/${req.file.filename}`
+      profilePicture: imageUrl
     });
     
     res.json({ success: true, data: user });

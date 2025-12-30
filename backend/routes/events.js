@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const EventModel = require('../models/EventModel');
 const { protect, admin } = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const { uploadToSupabase, generateFilename } = require('../utils/supabaseUpload');
 
 // @route   GET /api/events
 router.get('/', async (req, res) => {
@@ -37,13 +39,22 @@ router.get('/:id', async (req, res) => {
 });
 
 // @route   POST /api/events
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
-    const event = await EventModel.create({
+    const eventData = {
       ...req.body,
       createdBy: req.user.id,
       isApproved: req.user.role === 'admin'
-    });
+    };
+
+    // Upload image to Supabase Storage
+    if (req.file) {
+      const filename = generateFilename(req.file.originalname);
+      const imageUrl = await uploadToSupabase(req.file.buffer, 'events', filename, req.file.mimetype);
+      eventData.image = imageUrl;
+    }
+    
+    const event = await EventModel.create(eventData);
     
     res.status(201).json({ success: true, data: event });
   } catch (error) {
