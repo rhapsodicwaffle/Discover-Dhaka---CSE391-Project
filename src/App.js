@@ -11,6 +11,7 @@ import EventList from './components/Events/EventList';
 import Profile from './components/Profile/Profile';
 import Forum from './components/Forum/Forum';
 import ThreadDetail from './components/Forum/ThreadDetail';
+import HelpFAQ from './components/Help/HelpFAQ';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import { placesAPI } from './api/services';
 import './index.css';
@@ -188,6 +189,7 @@ function App() {
               <Route path="/forum" element={<ProtectedRoute><ForumPage /></ProtectedRoute>} />
               <Route path="/forum/:id" element={<ProtectedRoute><ThreadDetail /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/help" element={<HelpFAQ />} />
             </Routes>
           </main>
           <Footer />

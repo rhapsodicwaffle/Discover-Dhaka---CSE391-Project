@@ -81,9 +81,9 @@ const Footer = () => {
                 </a>
               </li>
               <li style={{ marginBottom: '10px' }}>
-                <a href="#" style={{ color: 'white', opacity: 0.8, textDecoration: 'none', fontSize: '14px' }}>
+                <Link to="/help" style={{ color: 'white', opacity: 0.8, textDecoration: 'none', fontSize: '14px' }}>
                   ❓ Help & FAQ
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
