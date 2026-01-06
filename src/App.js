@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/Shared/Navbar';
+import Footer from './components/Shared/Footer';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import InteractiveMap from './components/Map/InteractiveMap';
@@ -9,6 +10,7 @@ import StoryList from './components/Stories/StoryList';
 import EventList from './components/Events/EventList';
 import Profile from './components/Profile/Profile';
 import Forum from './components/Forum/Forum';
+import ThreadDetail from './components/Forum/ThreadDetail';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import { placesAPI } from './api/services';
 import './index.css';
@@ -172,19 +174,23 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
-            <Route path="/stories" element={<ProtectedRoute><StoriesPage /></ProtectedRoute>} />
-            <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/forum" element={<ProtectedRoute><ForumPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          </Routes>
+          <main style={{ flex: 1 }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+              <Route path="/stories" element={<ProtectedRoute><StoriesPage /></ProtectedRoute>} />
+              <Route path="/events" element={<ProtectedRoute><EventsPage /></ProtectedRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/forum" element={<ProtectedRoute><ForumPage /></ProtectedRoute>} />
+              <Route path="/forum/:id" element={<ProtectedRoute><ThreadDetail /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            </Routes>
+          </main>
+          <Footer />
         </div>
       </Router>
     </AuthProvider>

@@ -182,14 +182,39 @@ export const forumAPI = {
     const response = await apiClient.get(`/forum/${id}`);
     return response.data;
   },
+
+  getThreadById: async (id) => {
+    const response = await apiClient.get(`/forum/${id}`);
+    return response.data;
+  },
   
   createThread: async (threadData) => {
     const response = await apiClient.post('/forum', threadData);
     return response.data;
   },
   
-  replyToThread: async (id, content) => {
-    const response = await apiClient.post(`/forum/${id}/reply`, { content });
+  replyToThread: async (id, replyData) => {
+    const response = await apiClient.post(`/forum/${id}/reply`, replyData);
+    return response.data;
+  },
+
+  upvoteThread: async (id) => {
+    const response = await apiClient.post(`/forum/${id}/upvote`);
+    return response.data;
+  },
+
+  downvoteThread: async (id) => {
+    const response = await apiClient.post(`/forum/${id}/downvote`);
+    return response.data;
+  },
+
+  upvoteReply: async (replyId) => {
+    const response = await apiClient.post(`/forum/reply/${replyId}/upvote`);
+    return response.data;
+  },
+
+  downvoteReply: async (replyId) => {
+    const response = await apiClient.post(`/forum/reply/${replyId}/downvote`);
     return response.data;
   }
 };
