@@ -21,3 +21,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Documentation files (keep local only)
+FORUM_FOOTER_README.md
+HELP_FAQ_README.md
+PROJECT_DOCUMENTATION.md
